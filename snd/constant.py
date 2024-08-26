@@ -1,0 +1,2 @@
+SCREEN_SIZE = (800, 600)
+SCREEN_TITLE = "Python Game"
