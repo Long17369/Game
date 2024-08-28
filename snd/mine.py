@@ -5,7 +5,22 @@ import pygame
 import snd.color as color
 
 
-class Mine():
+class Cell_Type():
+    Safe_Unexplored = 0     # 未挖 安全
+    Mine_Unexplored = 1     # 未挖 地雷
+    Safe_Flag = 2           # 标记 安全
+    Mine_Flag = 3           # 标记 地雷
+    Safe_explored = 4       # 已挖 安全
+    Mine_explored = 5       # 已挖 地雷
+    Safe = {Safe_Unexplored, Safe_Flag, Safe_explored}
+    Mine = {Mine_Unexplored, Mine_Flag, Mine_explored}
+    Unexplored = {Safe_Unexplored, Mine_Unexplored}
+    explored = {Safe_explored, Mine_explored}
+    Flag = {Safe_Flag, Mine_Flag}
+    No_Flag = {Safe_Unexplored, Safe_explored, Mine_Unexplored, Mine_explored}
+
+
+class Cell():
     """格子
     """
 
@@ -24,6 +39,8 @@ class Mine():
         self.Rect = (x*size, y*size, size, size)
         self.mouse = False
         self.game_surface = game_surface
+        self.type = Cell_Type.Safe_Unexplored
+        self.number = 0
 
     def get_rect(self, topleft):
         self.rect = self.surface.get_rect(
@@ -31,22 +48,42 @@ class Mine():
 
     def mouse_click(self, event: pygame.event.Event):
         if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:
-                print(self.pos)
-        ...
+            if event.button == 1 and self.type in Cell_Type.Unexplored:
+                print(self.type, end=' ')
+                print(self.number)
+                self.type += 4
+            elif event.button == 1 and self.type in Cell_Type.Flag:
+                ...
+            elif event.button == 3 and self.type in Cell_Type.Flag:
+                self.type -= 2
+            elif event.button == 3 and self.type in Cell_Type.Unexplored:
+                self.type += 2
+            else:
+                print('error')
+                print(event.button)
+                print(self.type)
+
     def reflash(self):
         x = self.x
         y = self.y
         size = self.size
         self.surface = pygame.Surface((size, size), flags=pygame.SRCALPHA)
-        pygame.draw.polygon(self.surface, (255, 255, 255, 128), [
-                            (0, 0), (size, 0), (0, size)])
-        pygame.draw.polygon(self.surface, (0, 0, 0, 64), [
-                            (size, size), (size, 0), (0, size)])
-        self.game_surface.blit(self.surface, (self.Rect_x,self.Rect_y))
-        pygame.draw.rect(self.game_surface, color.Silver,
-                         (x*size+3, y*size+3, size-6, size-6))
-        if self.mouse:
-            a = pygame.Surface((size, size), flags=pygame.SRCALPHA)
-            pygame.draw.rect(a, (255,255,255,128), (0, 0, size, size))
-            self.game_surface.blit(a, (self.Rect_x,self.Rect_y))
+        if self.type in Cell_Type.Unexplored | Cell_Type.Flag:
+            pygame.draw.polygon(self.surface, (255, 255, 255, 128), [
+                                (0, 0), (size, 0), (0, size)])
+            pygame.draw.polygon(self.surface, (0, 0, 0, 64), [
+                                (size, size), (size, 0), (0, size)])
+            self.game_surface.blit(self.surface, (self.Rect_x, self.Rect_y))
+            pygame.draw.rect(self.game_surface, color.Silver,
+                             (x*size+3, y*size+3, size-6, size-6))
+            if self.mouse:
+                a = pygame.Surface((size, size), flags=pygame.SRCALPHA)
+                pygame.draw.rect(a, (255, 255, 255, 128), (0, 0, size, size))
+                self.game_surface.blit(a, (self.Rect_x, self.Rect_y))
+        if self.type in Cell_Type.explored:
+            pygame.draw.rect(self.surface, (255, 255, 255, 128),
+                             (self.Rect_x, self.Rect_y, size, size), 1)
+            if self.type == Cell_Type.Safe_explored:
+                ...
+
+            self.game_surface.blit(self.surface, (self.Rect_x, self.Rect_y))

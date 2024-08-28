@@ -15,7 +15,7 @@ clock = pygame.time.Clock()
 screen = pygame.display.set_mode(constant.SCREEN_SIZE)
 screen.fill(color.White)
 
-game = Game(20,20)
+game = Game(constant.LEVEL.BEGINNER)
 game_run = True
 
 while running:
@@ -42,6 +42,6 @@ while running:
         game.update()
     pygame.display.update()
     clock.tick(constant.FPS)
-    
+
 
 pygame.quit()

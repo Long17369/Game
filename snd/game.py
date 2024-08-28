@@ -1,68 +1,62 @@
 """游戏逻辑
 """
 
+from typing import Tuple
 import pygame
 import time
 import snd.color as color
-from snd.mine import Mine
+from snd.mine import Cell,Cell_Type
+import snd.constant as constant
+Level = constant.Level
+import random
 
 
 class Game():
     """游戏逻辑
     """
 
-    def __init__(self, game_size_x=0, game_size_y=0, mine=0):
+    def __init__(self, level:Level = Level()):
         """初始化游戏
         """
-        if game_size_x == 0 or game_size_y == 0:
-            self.game_size_x = 10
-            self.game_size_y = 10
-        else:
-            self.game_size_x = game_size_x
-            self.game_size_y = game_size_y
-        if mine == 0:
-            self.mine = 10
-        elif mine >= self.game_size_x*self.game_size_y/2:
-            self.mine = self.game_size_x*self.game_size_y/2-1
-        else:
-            self.mine = mine
+        self.level = level
         self.end = False
         self.screen = pygame.display.set_mode(
-            (self.game_size_x * 25 + 40, self.game_size_y * 25 + 100))
+            (self.level.x * 25 + 40, self.level.y * 25 + 100))
         self.screen.fill(color.Gray_X11)
         self.run = False
-        self.no_pos = Mine(-1,-1, self.screen)
+        self.no_pos = Cell(-1,-1, self.screen)
         self.mouse_motion_pos = self.no_pos
-        self.game_surface_rect = (20, 80)
-        self.game_surface = pygame.Surface(
-            (self.game_size_x * 25, self.game_size_y * 25))
-        self.button = [[Mine(x, y, self.game_surface)for y in range(
-            self.game_size_y)] for x in range(self.game_size_x)]
+        self.minefield_surface_rect = constant.MINEFIELD_SURFACE_RECT
+        self.minefield_surface_border = pygame.Surface((self.level.x * 25+2, self.level.y * 25+2),flags=pygame.SRCALPHA)
+        self.minefield_surface = pygame.Surface(
+            (self.level.x * 25, self.level.y * 25))
+        self.minefield = [[Cell(x, y, self.minefield_surface)for y in range(
+            self.level.y)] for x in range(self.level.x)]
         self.reflash()
-        [i.get_rect(self.game_surface_rect) for j in self.button for i in j]
+        [i.get_rect(self.minefield_surface_rect) for j in self.minefield for i in j]
 
     def run_game(self):
         """开始一轮游戏
         """
+        self.set_mine()
         self.time = time.time()
-        self.start_time = 0
+        self.Timer = 0
         self.run = True
         ...
 
     def mouse_click(self, event):
         """鼠标点击事件
         """
-        if self.game_surface.get_rect(topleft=self.game_surface_rect).collidepoint(event.pos):
-            for i in self.button:
-                for j in i:
-                    if j.rect.collidepoint(event.pos):
-                        j.mouse_click(event)
+        if self.minefield_surface.get_rect(topleft=self.minefield_surface_rect).collidepoint(event.pos):
+            if (not self.run) and event.button == 1:
+                self.run_game()
+            self.mouse_motion_pos.mouse_click(event)
 
     def mouse_motion(self, event: pygame.event.Event):
         """鼠标移动事件
         """
-        if self.game_surface.get_rect(topleft=self.game_surface_rect).collidepoint(event.pos):
-            for i in self.button:
+        if self.minefield_surface.get_rect(topleft=self.minefield_surface_rect).collidepoint(event.pos):
+            for i in self.minefield:
                 for j in i:
                     if j.rect.collidepoint(event.pos):
                         self.mouse_motion_pos.mouse = False
@@ -78,13 +72,36 @@ class Game():
         """
         if time.time() - self.time >= 1:
             self.time += 1
-            self.start_time += 1
+            self.Timer += 1
         ...
 
     def reflash(self):
         """重绘游戏界面
         """
+        self.screen.fill(color.Gray_X11)
+        Rect = (0,0,self.minefield_surface_border.get_width(),self.minefield_surface_border.get_height())
+        rect = (i-1 for i in self.minefield_surface_rect)
+        pygame.draw.rect(self.minefield_surface_border, (0,0,0,156), Rect, 1)
+        self.minefield_surface.fill(color.Gray_X11)
+        [i.reflash() for j in self.minefield for i in j]
+        self.screen.blit(self.minefield_surface_border, tuple(rect))
+        self.screen.blit(self.minefield_surface, self.minefield_surface_rect)
 
-        self.game_surface.fill(color.Gray_X11)
-        [i.reflash() for j in self.button for i in j]
-        self.screen.blit(self.game_surface, self.game_surface_rect)
+    def set_mine(self):
+        """设置地雷
+        """
+
+        mine_count = 0
+        while mine_count <= self.level.mine_count:
+            x = random.randint(0,self.level.x-1)
+            y = random.randint(0,self.level.y-1)
+            if self.minefield[x][y].type not in Cell_Type.Mine:
+                self.minefield[x][y].type = Cell_Type.Mine_Unexplored
+                print((x,y))
+                mine_count += 1
+                for i in range(x-1,x+2):
+                    for j in range(y-1,y+2):
+                        try:
+                            self.minefield[i][j].number += 1
+                        except IndexError:
+                            ...
