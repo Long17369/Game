@@ -1,2 +1,3 @@
 SCREEN_SIZE = (800, 600)
-SCREEN_TITLE = "Python Game"
+SCREEN_TITLE = "扫雷"
+FPS = 60
