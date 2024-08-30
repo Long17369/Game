@@ -8,18 +8,21 @@ import snd.color as color
 class Cell_Type():
     # 定义单元格类型类，用于表示扫雷游戏中的各种单元格状态
     Safe_Unexplored = 0     # 未挖 安全
+    Mine = 1                # 地雷
     Mine_Unexplored = 1     # 未挖 地雷
+    Flag = 2                # 标记
     Safe_Flag = 2           # 标记 安全
     Mine_Flag = 3           # 标记 地雷
+    Explored = 4            # 已挖
     Safe_explored = 4       # 已挖 安全
-    Mine_explored = 5       # 已挖 地雷}
-    Safe = {Safe_Unexplored, Safe_Flag, Safe_explored}      # 安全的单元格集合
-    Mine = {Mine_Unexplored, Mine_Flag, Mine_explored}      # 地雷的单元格集合
-    All = Safe | Mine                                       # 所有的单元格集合
-    Unexplored = {Safe_Unexplored, Mine_Unexplored}         # 未探索的单元格集合
-    explored = {Safe_explored, Mine_explored}               # 已探索的单元格集合
-    Flag = {Safe_Flag, Mine_Flag}                           # 标记的单元格集合
-    No_Flag = All - Flag                                    # 未标记的单元格集合
+    Mine_explored = 5       # 已挖 地雷
+    Safe_Set = {Safe_Unexplored, Safe_Flag, Safe_explored}      # 安全的单元格集合
+    Mine_Set = {Mine_Unexplored, Mine_Flag, Mine_explored}      # 地雷的单元格集合
+    All = Safe_Set | Mine_Set                                       # 所有的单元格集合
+    Unexplored_Set = {Safe_Unexplored, Mine_Unexplored}         # 未探索的单元格集合
+    Explored_Set = {Safe_explored, Mine_explored}               # 已探索的单元格集合
+    Flag_Set = {Safe_Flag, Mine_Flag}                           # 标记的单元格集合
+    No_Flag = All - Flag_Set                                    # 未标记的单元格集合
 
 
 class Cell():
@@ -68,6 +71,9 @@ class Cell():
             (3, 3, size - 6, size - 6)
         ]
 
+    def __str__(self) -> str:
+        return f'Cell(x:{self.x},y:{self.y},mouse:{self.mouse},type:{self.type},number:{self.number})'
+
     def get_rect(self, topleft):
         """获取棋子的矩形区域"""
         self.rect = self.surface.get_rect(
@@ -88,20 +94,20 @@ class Cell():
         """
         if event.type == pygame.MOUSEBUTTONDOWN:
             # 左键点击且单元格为未探索状态，探雷
-            if event.button == 1 and self.type in Cell_Type.Unexplored:
-                self.type += 4
+            if event.button == 1 and self.type in Cell_Type.Unexplored_Set:
+                self.type += Cell_Type.Explored
             # 左键点击已标记为旗子的单元格，无动作
-            elif event.button == 1 and self.type in Cell_Type.Flag:
+            elif event.button == 1 and self.type in Cell_Type.Flag_Set:
                 ...
             # 点击已探索的单元格，无动作
-            elif self.type in Cell_Type.explored:
+            elif self.type in Cell_Type.Explored_Set:
                 ...
             # 右键点击标记为旗子的单元格，将其类型改为未探索
-            elif event.button == 3 and self.type in Cell_Type.Flag:
-                self.type -= 2
+            elif event.button == 3 and self.type in Cell_Type.Flag_Set:
+                self.type -= Cell_Type.Flag
             # 右键点击未探索的单元格，将其标记为旗子
-            elif event.button == 3 and self.type in Cell_Type.Unexplored:
-                self.type += 2
+            elif event.button == 3 and self.type in Cell_Type.Unexplored_Set:
+                self.type += Cell_Type.Flag
             else:
                 # 出现未知的鼠标点击情况，打印错误信息和点击按钮及单元格类型
                 print('error')
@@ -118,19 +124,19 @@ class Cell():
         pygame.draw.rect(self.surface, (0, 0, 0, 64), (0, 0, size, size), 1)
 
         # 如果当前单元格未探索或被标记
-        if self.type in Cell_Type.Unexplored | Cell_Type.Flag:
+        if self.type in Cell_Type.Unexplored_Set | Cell_Type.Flag_Set:
             # 绘制单元格本身
             self.draw_cell()
             # 如果鼠标在单元格上，绘制高亮效果
             if self.mouse:
                 self.draw_highlight()
             # 如果单元格被标记，绘制旗帜
-            if self.type in Cell_Type.Flag:
+            if self.type in Cell_Type.Flag_Set:
                 self.draw_cell()
                 self.draw_flag()
 
         # 如果当前单元格是已探索类型
-        if self.type in Cell_Type.explored:
+        if self.type in Cell_Type.Explored_Set:
             # 如果单元格周围有雷，绘制数字
             if self.number != 0:
                 self.draw_number()

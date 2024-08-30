@@ -1,6 +1,8 @@
 """启动页面
 """
 
+import tkinter as tk
+from tkinter import messagebox
 import pygame
 import snd.color as color
 import snd.constant as constant
@@ -20,7 +22,7 @@ game_run = True
 
 while running:
     if game_run == False:
-        game = Game()
+        game = Game(constant.LEVEL.BEGINNER)
         game_run = True
         screen = game.screen
     for event in pygame.event.get():
@@ -37,7 +39,10 @@ while running:
             game.mouse_click(event)
             game.reflash()
     if game.end:
-        game_run = False
+        tk.Tk().withdraw()
+        messagebox.showinfo('Game Over', 'Game Over')
+        game = Game(constant.LEVEL.ADVANCED)
+        screen = game.screen
     if game.run:
         game.update()
     pygame.display.update()

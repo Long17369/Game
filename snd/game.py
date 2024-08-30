@@ -1,6 +1,7 @@
 """游戏逻辑
 """
 
+import random
 from typing import Tuple
 import pygame
 import time
@@ -8,7 +9,32 @@ import snd.color as color
 from snd.mine import Cell, Cell_Type
 import snd.constant as constant
 Level = constant.Level
-import random
+
+_log = False
+
+
+def log(func, *args, **kwargs):
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        if _log:
+            with open('log.txt', 'a') as f:
+                print(
+                    f'{time.strftime("%Y-%m-%d %H:%M:%S",time.localtime())}', file=f)
+                print(f'{func.__name__}', file=f)
+                for i in range(len(args)):
+                    print(f'{i},{args[i]}', file=f)
+                for i in kwargs:
+                    print(f'{i}:{kwargs[i]}', file=f)
+                print(f'result:{result}', file=f)
+                print(
+                    '--------------------------------------------------------------------------------', file=f)
+        return result
+    return wrapper
+
+
+@log
+def Log(*args, **kwargs):
+    return
 
 
 class Game():
@@ -53,21 +79,19 @@ class Game():
         if self.minefield_surface.get_rect(topleft=self.minefield_surface_rect).collidepoint(event.pos):
             if (not self.run) and event.button == 1:
                 self.run_game()
-                if self.click_cell(event, self.mouse_motion_pos):
-                    self.run = False
-                    self.restart(event)
-            else:
-                self.end = self.click_cell(event, self.mouse_motion_pos)
+            self.end = self.click_cell(event, self.mouse_motion_pos)
 
-    def restart(self, event: pygame.event.Event):
+    def restart(self,):
         """重置地雷位置
         """
         def reset(n: Cell):
-            n.number -= 1
-        [reset(i) for j in self.minefield for i in j if i.number in Cell_Type.Mine]
+            n.type = Cell_Type.Safe_Unexplored
+            n.number = 0
+        [reset(i)
+         for j in self.minefield for i in j if i.type in Cell_Type.Mine_Set]
         print('restart')
-        self.mouse_click(event)
 
+    @log
     def click_cell(self, event, pos: Cell):
         if pos.mouse_click(event):
             return True
@@ -77,11 +101,15 @@ class Game():
                 y = pos.pos[1]
                 for i in range(x-1, x+2):
                     for j in range(y-1, y+2):
+                        if i < 0 or j < 0:
+                            continue
                         try:
                             posTemp = self.minefield[i][j]
-                            if posTemp.type in Cell_Type.Unexplored:
-                                if self.click_cell(event, self.minefield[i][j]):
-                                    raise SystemError('Game Error')
+                            if posTemp.type in Cell_Type.Unexplored_Set:
+                                if self.click_cell(event, posTemp):
+                                    Log(f'Game Error{posTemp} {self.mouse_motion_pos.pos}')
+                                    raise SystemError(
+                                        f'Game Error{posTemp} {self.mouse_motion_pos.pos}')
                         except IndexError:
                             ...
         return False
@@ -128,16 +156,26 @@ class Game():
         """
 
         mine_count = 0
-        while mine_count <= self.level.mine_count:
+        while mine_count <= self.level.mine_count-1:
             x = random.randint(0, self.level.x-1)
             y = random.randint(0, self.level.y-1)
-            if self.minefield[x][y].type not in Cell_Type.Mine:
-                self.minefield[x][y].type = Cell_Type.Mine_Unexplored
+            if self.minefield[x][y].type not in Cell_Type.Mine_Set:
+                if self.minefield[x][y] == self.mouse_motion_pos:
+                    continue
+                self.minefield[x][y].type += Cell_Type.Mine
                 # print((x, y))
                 mine_count += 1
+                Log_List = [(x, y)]
                 for i in range(x-1, x+2):
                     for j in range(y-1, y+2):
+                        if i < 0 or j < 0:
+                            continue
                         try:
                             self.minefield[i][j].number += 1
                         except IndexError:
                             ...
+                        else:
+                            Log_List.append((i, j))
+                Log(Log_List)
+        Log('\n'+'\n'.join([''.join([str(i.number)
+            if i.type in Cell_Type.Safe_Set else '*' for i in j])for j in self.minefield]))
