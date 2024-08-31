@@ -63,11 +63,11 @@ class Level():
 
 class Difficulty_Level():
     """
-    | LEVEL | 难度 |
-    |----|----|
-    | BEGINNER | 初级 |
-    | INTERMEDIATE | 中级 |
-    | ADVANCED | 高级 |
+    | LEVEL | 难度 | 大小 | 雷数 |
+    |----|----|----|----|
+    | BEGINNER | 初级 | 9x9 | 10 |
+    | INTERMEDIATE | 中级 | 16x16 | 40 |
+    | ADVANCED | 高级 | 30x16 | 99 |
     """
     BEGINNER = Level(9, 9, 10)            # 初级 Beginner
     INTERMEDIATE = Level(16, 16, 40)      # 中级 Intermediate

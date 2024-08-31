@@ -3,6 +3,7 @@
 
 import pygame
 import snd.color as color
+from snd.draw import Draw
 
 
 class Cell_Type():
@@ -58,6 +59,7 @@ class Cell():
         self.Rect_y = y * size
         # 定义棋子在游戏界面中的矩形区域
         self.Rect = (x * size, y * size, size, size)
+        self.Draw = Draw(size,game_surface)
         # 保存游戏界面的Surface对象
         self.game_surface = game_surface
         # 初始化字体对象，用于在棋子上显示文字或数字
@@ -95,6 +97,7 @@ class Cell():
         if event.type == pygame.MOUSEBUTTONDOWN:
             # 左键点击且单元格为未探索状态，探雷
             if event.button == 1 and self.type in Cell_Type.Unexplored_Set:
+                self.Draw.number = self.number
                 self.type += Cell_Type.Explored
             # 左键点击已标记为旗子的单元格，无动作
             elif event.button == 1 and self.type in Cell_Type.Flag_Set:
@@ -120,75 +123,27 @@ class Cell():
         # 根据当前单元格的大小创建一个透明的Surface
         size = self.size
         self.surface = pygame.Surface((size, size), flags=pygame.SRCALPHA)
+        self.Draw.surface = self.surface
         # 为Surface添加一个黑色边缘
         pygame.draw.rect(self.surface, (0, 0, 0, 64), (0, 0, size, size), 1)
 
         # 如果当前单元格未探索或被标记
         if self.type in Cell_Type.Unexplored_Set | Cell_Type.Flag_Set:
             # 绘制单元格本身
-            self.draw_cell()
+            self.Draw.draw_cell()
             # 如果鼠标在单元格上，绘制高亮效果
             if self.mouse:
-                self.draw_highlight()
+                self.Draw.draw_highlight()
             # 如果单元格被标记，绘制旗帜
             if self.type in Cell_Type.Flag_Set:
-                self.draw_cell()
-                self.draw_flag()
+                self.Draw.draw_cell()
+                self.Draw.draw_flag()
 
         # 如果当前单元格是已探索类型
         if self.type in Cell_Type.Explored_Set:
             # 如果单元格周围有雷，绘制数字
             if self.number != 0:
-                self.draw_number()
+                self.Draw.draw_number()
 
         # 将Surface内容绘制到游戏主界面上
         self.game_surface.blit(self.surface, (self.Rect_x, self.Rect_y))
-
-    def draw_cell(self):
-        """
-        绘制格子
-
-        此函数负责在图形界面上绘制一个细胞单元的形状和颜色。使用pygame库的绘制功能，
-        通过self.cell_list存储的顶点信息来绘制阴影，并绘制格子本身。
-        """
-        # 获取绘制信息
-        polygon = self.cell_list
-
-        # 绘制阴影
-        pygame.draw.polygon(self.surface, polygon[0], polygon[1])
-        pygame.draw.polygon(self.surface, polygon[2], polygon[3])
-        # 绘制格子
-        pygame.draw.rect(self.surface, color.Silver, polygon[4])
-
-    def draw_flag(self):
-        """绘制旗帜"""
-        size = self.size
-        pygame.draw.polygon(self.surface, color.Red, [
-                            (size/2, size/6), (size/2, size/2), (size/5, size/3)])
-        pygame.draw.line(self.surface, color.Black,
-                         (size/2, size/2), (size/2, size*0.7), int(size//25))
-        pygame.draw.line(self.surface, color.Black, (size*0.25,
-                         size*0.7), (size*0.75, size*0.7), int(size//25*2))
-
-    def draw_highlight(self):
-        """
-        绘制高亮区域
-
-        该方法用于在游戏界面中绘制一个半透明的白色高亮效果，用于突出显示某个区域。
-        它通过创建一个带有SRCALPHA标志的Surface对象来实现半透明效果，然后在这个
-        Surface对象上绘制一个白色的矩形，最后将这个Surface对象与游戏界面合并，达到
-        高亮显示的效果。
-        """
-        size = self.size
-        # 创建一个带有SRCALPHA标志的Surface对象，用于支持透明度设置
-        a = pygame.Surface((size, size), flags=pygame.SRCALPHA)
-        # 在Surface对象上绘制一个半透明的白色矩形
-        pygame.draw.rect(a, (255, 255, 255, 128), (0, 0, size, size))
-        # 将带有高亮效果的Surface对象绘制到游戏界面上
-        self.surface.blit(a, (0,0))
-
-    def draw_number(self):
-        number = self.font.render(str(self.number), True, color.Black)
-        number_rect = number.get_rect()
-        number_rect.center = self.surface.get_rect().center
-        self.surface.blit(number, number_rect)
