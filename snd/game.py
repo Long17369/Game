@@ -10,49 +10,7 @@ import time
 import snd.color as color
 from snd.mine import Cell, Cell_Type
 import snd.constant as constant
-
-_log = False  # 全局变量，用于控制是否记录日志
-
-def log(func):
-    """
-    装饰器函数，用于记录被装饰函数的调用信息
-    func: 被装饰的函数
-    """
-    def wrapper(*args, **kwargs):
-        """
-        内部函数，用于包装被装饰的函数，记录其调用信息
-
-        参数:
-        args: 被装饰函数的非关键字参数
-        kwargs: 被装饰函数的关键字参数
-        """
-        result = func(*args, **kwargs)  # 调用被装饰的函数，并获取其返回值
-        if _log:  # 如果全局变量_log为True，则记录日志
-            with open('log.txt', 'a') as f:  # 以追加模式打开日志文件
-                print(
-                    f'{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}', file=f)  # 打印当前时间
-                print(f'{func.__name__}', file=f)  # 打印被装饰函数的名称
-                for i in range(len(args)):  # 遍历非关键字参数
-                    print(f'{i},{args[i]}', file=f)  # 打印参数索引和值
-                for i in kwargs:  # 遍历关键字参数
-                    print(f'{i}:{kwargs[i]}', file=f)  # 打印参数名和值
-                print(f'result:{result}', file=f)  # 打印函数返回值
-                print(
-                    '--------------------------------------------------------------------------------', file=f)  # 打印分隔线
-        return result  # 返回被装饰函数的返回值
-    return wrapper  # 返回包装后的函数
-
-
-@log  # 使用log装饰器装饰Log函数
-def Log(*args, **kwargs):
-    """
-    日志记录函数，用于记录函数调用信息。
-
-    参数:
-    args: 非关键字参数
-    kwargs: 关键字参数
-    """
-    return  # 返回None
+from snd.others import log, Log, Level
 
 
 class Game():
@@ -62,7 +20,7 @@ class Game():
     run: bool = False  # 游戏运行标志
     Flag: Dict[Tuple[int, int], bool] = {}  # 存储旗帜标记的字典
 
-    def __init__(self, level: constant.Level = constant.Level()):
+    def __init__(self, level: Level = Level(), size: int = 25):
         """
         初始化游戏
 
@@ -70,18 +28,30 @@ class Game():
         - level: 游戏难度等级，默认为默认等级
         """
         self.level = level  # 设置游戏难度等级
+        self.size = size  # 设置游戏大小
+        self.screen_size = (self.level.x * size + size * 1.6,
+                            self.level.y * size + size * 4)  # 根据难度等级设置游戏窗口大小
         self.screen = pygame.display.set_mode(
-            (self.level.x * 25 + 40, self.level.y * 25 + 100))  # 根据难度等级设置游戏窗口大小
+            self.screen_size)  # 设置游戏窗口大小
         self.screen.fill(color.Gray_X11)  # 用灰色填充游戏窗口
-        self.no_pos = Cell(-1, -1, self.screen)  # 创建一个无效位置的单元格对象
+        self.no_pos = Cell(-1, -1, self.screen,size)  # 创建一个无效位置的单元格对象
         self.mouse_motion_pos = self.no_pos  # 初始化鼠标移动位置为无效位置
-        self.minefield_surface_rect = constant.MINEFIELD_SURFACE_RECT  # 设置雷区表面的矩形区域
+
+        self.minefield_surface_rect = (
+            constant.MINEFIELD_SURFACE_RECT[0]*size, constant.MINEFIELD_SURFACE_RECT[1]*size)  # 设置雷区表面的矩形区域
         self.minefield_surface_border = pygame.Surface(
-            (self.level.x * 25 + 2, self.level.y * 25 + 2), flags=pygame.SRCALPHA)  # 创建雷区边框表面
+            (self.level.x * size + 2, self.level.y * size + 2), flags=pygame.SRCALPHA)  # 创建雷区边框表面
         self.minefield_surface = pygame.Surface(
-            (self.level.x * 25, self.level.y * 25))  # 创建雷区表面
-        self.minefield = [[Cell(x, y, self.minefield_surface) for y in range(
+            (self.level.x * size, self.level.y * size))  # 创建雷区表面
+        self.minefield = [[Cell(x, y, self.minefield_surface,size) for y in range(
             self.level.y)] for x in range(self.level.x)]  # 初始化雷区，创建所有单元格对象
+        # 重置按钮
+        self.reset_button = Cell(-10086,-10086, self.screen,size)
+        self.reset_button.type = Cell_Type.Reset_Button
+        self.reset_button.Rect_x = self.screen_size[0] / 2 - size / 2
+        self.reset_button.Rect_y = self.minefield_surface_rect[1] / 2 - size / 2
+        self.reset_button.rect = pygame.Rect(
+            self.reset_button.Rect_x, self.reset_button.Rect_y, size, size)
         self.reflash()  # 刷新游戏界面
         [i.get_rect(self.minefield_surface_rect)
          for j in self.minefield for i in j]  # 为每个单元格设置矩形区域
@@ -118,7 +88,15 @@ class Game():
                     self.Flag.pop(pos.pos)
             # 检查游戏状态
             self.check()
+        else:
+            # 如果鼠标点击位置不在雷区表面内，则检查是否点击了重置按钮
+            if self.reset_button.rect.collidepoint(event.pos) and event.button == 1:
+                # 重置游戏
+                self.restart()
+                # 刷新游戏界面
+                self.reflash()
 
+    @log  # 日志装饰器，用于记录函数调用
     def check(self):
         # 检查未探索或标记的单元格数量是否等于地雷数量
         if len([j for i in self.minefield for j in i if j.type in Cell_Type.Unexplored_Set | Cell_Type.Flag_Set]) == self.level.mine_count:
@@ -134,6 +112,7 @@ class Game():
             # 退出Tkinter应用程序
             a.quit()
 
+    @log  # 日志装饰器，用于记录函数调用
     def restart(self,):
         """重置地雷位置
         """
@@ -212,10 +191,14 @@ class Game():
                         j.mouse = True
                         # 更新鼠标悬停位置为当前方块
                         self.mouse_motion_pos = j
+        elif self.reset_button.rect.collidepoint(event.pos):
+            self.mouse_motion_pos.mouse = False
+            self.reset_button.mouse = True
+            self.mouse_motion_pos = self.reset_button
         else:
             # 如果鼠标不在雷区表面矩形内，则设置前一个鼠标悬停方块的mouse属性为False
             self.mouse_motion_pos.mouse = False
-            # 更新鼠标悬停位置为no_pos（可能是一个默认的空位置）
+            # 更新鼠标悬停位置为no_pos（一个默认的空位置）
             self.mouse_motion_pos = self.no_pos
             # 设置no_pos的mouse属性为True
             self.mouse_motion_pos.mouse = True
@@ -266,6 +249,9 @@ class Game():
         # 将地雷区域绘制到屏幕上
         self.screen.blit(self.minefield_surface, self.minefield_surface_rect)
 
+        # 绘制重置按钮
+        self.reset_button.reflash()
+
     def set_mine(self):
         """设置地雷
         """
@@ -315,5 +301,5 @@ class Game():
                 Log(Log_List)
 
         # 记录整个雷区的数字和地雷分布
-        Log('\n'+'\n'.join([''.join([str(i.number) if i.type in Cell_Type.Safe_Set else '*' for i in j])
-            for j in self.minefield]))
+        Log(*[''.join([str(i.number) if i.type in Cell_Type.Safe_Set else '*' for i in j])
+            for j in self.minefield])

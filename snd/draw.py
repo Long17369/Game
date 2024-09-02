@@ -7,9 +7,9 @@ import snd.color as color
 
 class Draw():
 
-    number:int = 0
+    number: int = 0
 
-    def __init__(self,size: int = 25,surface: pygame.Surface = pygame.Surface((25, 25))):
+    def __init__(self, size: int = 25, surface: pygame.Surface = pygame.Surface((25, 25))):
         self.font = pygame.font.Font(None, size)
         self.surface = surface
         self.size = size
@@ -62,7 +62,7 @@ class Draw():
         # 在Surface对象上绘制一个半透明的白色矩形
         pygame.draw.rect(a, (255, 255, 255, 128), (0, 0, size, size))
         # 将带有高亮效果的Surface对象绘制到游戏界面上
-        self.surface.blit(a, (0,0))
+        self.surface.blit(a, (0, 0))
 
     def draw_number(self):
         """
@@ -78,3 +78,26 @@ class Draw():
         number_rect.center = self.surface.get_rect().center
         # 将渲染好的数字绘制到Cell矩形区域上
         self.surface.blit(number, number_rect)
+
+    def draw_reset(self):
+        """
+        绘制重置按钮。
+        该方法用于在游戏界面上绘制一个“重置”按钮，当玩家点击该按钮时，游戏将会重置。
+        """
+        size = self.size
+        # 创建一个带有SRCALPHA标志的Surface对象，用于支持透明度设置
+        a = pygame.Surface((size, size), flags=pygame.SRCALPHA)
+        # 在矩形上绘制一个小黄脸
+        pygame.draw.circle(a, color.Gold, (size/2, size/2), size/3)
+        # 添加边框
+        pygame.draw.circle(a, color.Black, (size/2, size/2), size/3, 1)
+        # 眼睛
+        pygame.draw.circle(a, color.Black, (size*0.38, size/7*3), size/15)
+        pygame.draw.circle(a, color.Black, (size*0.62, size/7*3), size/15)
+        # 嘴巴
+        mouth = pygame.Surface((size, size), flags=pygame.SRCALPHA)
+        pygame.draw.circle(mouth, color.Black, (size/2, size*0.38), size/3, 1)
+        pygame.draw.rect(mouth, (0,0,0,0), (0, 0, size, size/5*3))
+        a.blit(mouth, (0,0))
+        # 将带有重置按钮的Surface对象绘制到游戏界面上
+        self.surface.blit(a, (0, 0))

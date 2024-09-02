@@ -24,15 +24,16 @@ class Cell_Type():
     Explored_Set = {Safe_explored, Mine_explored}               # 已探索的单元格集合
     Flag_Set = {Safe_Flag, Mine_Flag}                           # 标记的单元格集合
     No_Flag = All - Flag_Set                                    # 未标记的单元格集合
+    Reset_Button = 10086    # 重置
 
 
 class Cell():
-    """格子
-    """
+    """格子"""
 
     number: int = 0
     mouse: bool = False
     type = Cell_Type.Safe_Unexplored
+    size: int = 0
 
     def __init__(self, x: int, y: int, game_surface: pygame.Surface, size: int = 25):
         """
@@ -45,11 +46,7 @@ class Cell():
         """
         # 特殊情况处理：如果x和y都为-1，则表示这个棋子代表雷区之外的区域
         if x == -1 and y == -1:
-            self.x = -1
-            self.y = -1
             self.mouse = True
-            return
-
         # 初始化棋子的坐标、大小和相关属性
         self.x = x
         self.y = y
@@ -59,11 +56,9 @@ class Cell():
         self.Rect_y = y * size
         # 定义棋子在游戏界面中的矩形区域
         self.Rect = (x * size, y * size, size, size)
-        self.Draw = Draw(size,game_surface)
+        self.Draw = Draw(size, game_surface)
         # 保存游戏界面的Surface对象
         self.game_surface = game_surface
-        # 初始化字体对象，用于在棋子上显示文字或数字
-        self.font = pygame.font.Font(None, self.size)
         # 初始化棋子的绘制参数，包括颜色和图形等
         self.cell_list = [
             (255, 255, 255, 128),
@@ -145,5 +140,17 @@ class Cell():
             if self.number != 0:
                 self.Draw.draw_number()
 
+        # 如果当前单元格是重置按钮
+        if self.type == Cell_Type.Reset_Button:
+            self.Draw.draw_cell()
+            self.Draw.draw_reset()
+            # 如果鼠标在单元格上，绘制高亮效果
+            if self.mouse:
+                self.Draw.draw_highlight()
+
         # 将Surface内容绘制到游戏主界面上
         self.game_surface.blit(self.surface, (self.Rect_x, self.Rect_y))
+
+    def set_Rect(self, x, y):
+        self.Rect_x = x * self.size
+        self.Rect_y = y * self.size
