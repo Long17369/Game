@@ -48,6 +48,7 @@ while running:
     
     # 如果游戏结束，重新初始化游戏对象
     if game.end:
+        pygame.event.clear()
         game = Game(constant.LEVEL.BEGINNER)
         screen = game.screen
     
