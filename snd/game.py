@@ -125,10 +125,12 @@ class Game():
             n.number = 0  # 将单元格的数字设置为0
 
         # 遍历整个地雷区域，对所有类型为地雷的单元格进行重置
-        [reset(i)
-         for j in self.minefield for i in j if i.type in Cell_Type.Mine_Set]
+        [reset(i) for j in self.minefield for i in j ]
 
-        print('restart')  # 打印重置完成的信息
+        # 设置游戏运行状态为False
+        self.run = False
+
+        # print('restart')  # 打印重置完成的信息
 
     @log  # 日志装饰器，用于记录函数调用
     def click_cell(self, event, pos: Cell):
