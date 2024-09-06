@@ -152,29 +152,61 @@ class Game():
         if event.button == 1:
             # 如果被点击的单元格的数字为0
             if pos.number == 0:
-                x = pos.pos[0]  # 获取单元格的x坐标
-                y = pos.pos[1]  # 获取单元格的y坐标
-                # 遍历被点击单元格周围的8个单元格
-                for i in range(x-1, x+2):
+                self.traversal(event, pos, 0)  # 遍历周围的单元格
+            else:
+                # 检查周围标记数量
+                flag_count = 0
+                for i in range(pos.pos[0]-1, pos.pos[0]+2):
                     if i < 0:  # 如果x坐标小于0，跳过
                         continue
-                    for j in range(y-1, y+2):
+                    for j in range(pos.pos[1]-1, pos.pos[1]+2):
                         if j < 0:  # 如果y坐标小于0，跳过
                             continue
                         try:
-                            posTemp = self.minefield[i][j]  # 获取临时单元格对象
-                            # 如果临时单元格的类型是未探索的
-                            if posTemp.type in Cell_Type.Unexplored_Set:
-                                # 递归调用click_cell处理临时单元格的点击事件
-                                if self.click_cell(event, posTemp):
-                                    # 记录游戏错误日志
-                                    Log(f'Game Error{posTemp} {self.mouse_motion_pos.pos}')
-                                    # 抛出系统错误
-                                    raise SystemError(
-                                        f'Game Error{posTemp} {self.mouse_motion_pos.pos}')
-                        except IndexError:
-                            pass  # 捕获索引错误，跳过
+                            if self.Flag[(i, j)]:
+                                flag_count += 1
+                        except KeyError:
+                            pass  # 捕获键错误，跳过
+                # 如果周围标记数量等于数字，则
+                if flag_count == pos.number:
+                    self.traversal(event, pos, 1)
+                ...
         return False  # 如果未踩雷，返回False
+
+    @log  # 日志装饰器，用于记录函数调用
+    def traversal(self,event: pygame.event.Event, pos: Cell, mode: int):
+        """
+        遍历周围的单元格，并对每个单元格进行处理。
+
+        参数:
+        - pos: 被点击的单元格对象。
+        """
+        # 遍历周围的单元格
+        x = pos.pos[0]  # 获取单元格的x坐标
+        y = pos.pos[1]  # 获取单元格的y坐标
+        # 遍历被点击单元格周围的8个单元格
+        for i in range(x-1, x+2):
+            if i < 0:  # 如果x坐标小于0，跳过
+                continue
+            for j in range(y-1, y+2):
+                if j < 0:  # 如果y坐标小于0，跳过
+                    continue
+                try:
+                    posTemp = self.minefield[i][j]  # 获取临时单元格对象
+                    # 如果临时单元格的类型是未探索的
+                    if posTemp.type in Cell_Type.Unexplored_Set:
+                        if mode == 0:
+                            # 递归调用click_cell处理临时单元格的点击事件
+                            if self.click_cell(event, posTemp):
+                                # 记录游戏错误日志
+                                Log(f'Game Error{posTemp} {self.mouse_motion_pos.pos}')
+                                # 抛出系统错误
+                                raise SystemError(
+                                    f'Game Error{posTemp} {self.mouse_motion_pos.pos}')
+                        elif mode == 1:
+                            posTemp.mouse_click(event)  # 处理临时单元格的点击事件
+                except IndexError:
+                    pass  # 捕获索引错误，跳过
 
     def mouse_motion(self, event: pygame.event.Event):
         """鼠标移动事件
