@@ -16,10 +16,6 @@ running = True
 
 # 创建时钟对象，用于控制帧率
 clock = pygame.time.Clock()
-# 设置屏幕尺寸
-screen = pygame.display.set_mode(constant.SCREEN_SIZE)
-# 填充屏幕背景色为白色
-screen.fill(color.White)
 
 # 创建游戏对象，初始难度为初级
 game = Game(constant.LEVEL.BEGINNER)
