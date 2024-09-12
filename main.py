@@ -25,7 +25,8 @@ game_run = True
 # 主循环
 while running:
     # 处理事件
-    for event in pygame.event.get():
+    event_list = pygame.event.get()
+    for event in event_list:
         if event.type == pygame.QUIT:
             # 如果检测到关闭窗口事件，设置running为False，退出主循环
             running = False
@@ -35,10 +36,6 @@ while running:
             game.reflash()
         elif event.type == pygame.MOUSEBUTTONDOWN:
             # 处理鼠标按键按下事件
-            if event.button == 1:
-                print('按下鼠标左键')
-            elif event.button == 3:
-                print('按下鼠标右键')
             game.mouse_click(event)
             game.reflash()
     

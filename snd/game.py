@@ -16,9 +16,9 @@ from snd.others import log, Log, Level
 class Game():
     """游戏逻辑"""
 
-    end: bool = False  # 游戏结束标志
-    run: bool = False  # 游戏运行标志
-    Flag: Dict[Tuple[int, int], bool] = {}  # 存储旗帜标记的字典
+    end: bool  # 游戏结束标志
+    run: bool  # 游戏运行标志
+    Flag: Dict[Tuple[int, int], bool] # 存储旗帜标记的字典
 
     def __init__(self, level: Level = Level(), size: int = 25):
         """
@@ -27,6 +27,9 @@ class Game():
         参数:
         - level: 游戏难度等级，默认为默认等级
         """
+        self.end = False  # 游戏结束标志
+        self.run = False  # 游戏运行标志
+        self.Flag = {}  # 存储旗帜标记的字典
         self.level = level  # 设置游戏难度等级
         self.size = size  # 设置游戏大小
         self.screen_size = (self.level.x * size + size * 1.6,
@@ -123,6 +126,8 @@ class Game():
             """
             n.type = Cell_Type.Safe_Unexplored  # 将单元格类型设置为未探索的安全区域
             n.number = 0  # 将单元格的数字设置为0
+
+        self.Flag = {}  # 清空旗帜标记字典
 
         # 遍历整个地雷区域，对所有类型为地雷的单元格进行重置
         [reset(i) for j in self.minefield for i in j ]
