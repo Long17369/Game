@@ -8,6 +8,7 @@ from typing import Dict, Tuple
 import pygame
 import time
 import snd.color as color
+from snd.draw import Draw_Timer
 from snd.mine import Cell, Cell_Type
 import snd.constant as constant
 from snd.others import log, Log, Level
@@ -56,6 +57,7 @@ class Game():
         self.reset_button.Rect_y = self.minefield_surface_rect[1] / 2 - size / 2
         self.reset_button.rect = pygame.Rect(
             self.reset_button.Rect_x, self.reset_button.Rect_y, size, size)
+        self.draw_timer = Draw_Timer(self.screen, self.size)
         self.reflash()  # 刷新游戏界面
         [i.get_rect(self.minefield_surface_rect)
          for j in self.minefield for i in j]  # 为每个单元格设置矩形区域
@@ -64,7 +66,7 @@ class Game():
         """开始一轮游戏"""
         self.set_mine()  # 设置地雷
         self.time = time.time()  # 记录游戏开始时间
-        self.Timer: int = 0  # 初始化计时器
+        self.draw_timer.Timer = 0  # 初始化计时器
         self.run = True  # 设置游戏运行状态为True
         ...
 
@@ -92,7 +94,7 @@ class Game():
             if (not self.run) and event.button == 1:
                 self.run_game()
             # 点击单元格并检查是否触雷
-            if self.click_cell(event, pos):
+            if pos.mouse_click(event):
                 self.end = True
                 # 显示游戏结束提示框
                 a = tk.Tk()
@@ -127,7 +129,7 @@ class Game():
             a.withdraw()
             # 显示信息框，提示玩家胜利，并显示游戏时间
             messagebox.showinfo(
-                'Win', f'Win\nTime:{self.Timer+time.time()-self.time}\nSize:{self.level.x}x{self.level.y}\nMine:{self.level.mine_count}')
+                'Win', f'Win\nTime:{self.draw_timer.Timer+time.time()-self.time}\nSize:{self.level.x}x{self.level.y}\nMine:{self.level.mine_count}')
             # 退出Tkinter应用程序
             a.quit()
 
@@ -150,82 +152,6 @@ class Game():
         self.run = False
 
         # print('restart')  # 打印重置完成的信息
-
-    @log  # 日志装饰器，用于记录函数调用
-    def click_cell(self, event, pos: Cell):
-        """
-        处理单元格点击事件的函数。
-
-        参数:
-        - event: 鼠标事件对象。
-        - pos: 被点击的单元格对象。
-
-        返回:
-        - bool: 如果踩雷，返回True；否则返回False。
-        """
-        # 如果单元格的mouse_click方法成功处理了事件，返回True
-        if pos.mouse_click(event):
-            return True
-
-        # # 如果点击事件是左键点击
-        # if event.button == 1:
-        #     # 如果被点击的单元格的数字为0
-        #     if pos.number == 0:
-        #         self.traversal(event, pos, 0)  # 遍历周围的单元格
-        #     else:
-        #         # 检查周围标记数量
-        #         flag_count = 0
-        #         for i in range(pos.pos[0]-1, pos.pos[0]+2):
-        #             if i < 0:  # 如果x坐标小于0，跳过
-        #                 continue
-        #             for j in range(pos.pos[1]-1, pos.pos[1]+2):
-        #                 if j < 0:  # 如果y坐标小于0，跳过
-        #                     continue
-        #                 try:
-        #                     if self.Flag[(i, j)]:
-        #                         flag_count += 1
-        #                 except KeyError:
-        #                     pass  # 捕获键错误，跳过
-        #         # 如果周围标记数量等于数字，则
-        #         if flag_count == pos.number:
-        #             self.traversal(event, pos, 1)
-        #         ...
-        return False  # 如果未踩雷，返回False
-
-    @log  # 日志装饰器，用于记录函数调用
-    def traversal(self,event: pygame.event.Event, pos: Cell, mode: int):
-        """
-        遍历周围的单元格，并对每个单元格进行处理。
-
-        参数:
-        - pos: 被点击的单元格对象。
-        """
-        # 遍历周围的单元格
-        x = pos.pos[0]  # 获取单元格的x坐标
-        y = pos.pos[1]  # 获取单元格的y坐标
-        # 遍历被点击单元格周围的8个单元格
-        for i in range(x-1, x+2):
-            if i < 0:  # 如果x坐标小于0，跳过
-                continue
-            for j in range(y-1, y+2):
-                if j < 0:  # 如果y坐标小于0，跳过
-                    continue
-                try:
-                    posTemp = self.minefield[i][j]  # 获取临时单元格对象
-                    # 如果临时单元格的类型是未探索的
-                    if posTemp.type in Cell_Type.Unexplored_Set:
-                        if mode == 0:
-                            # 递归调用click_cell处理临时单元格的点击事件
-                            if self.click_cell(event, posTemp):
-                                # 记录游戏错误日志
-                                Log(f'Game Error{posTemp} {self.mouse_motion_pos.pos}')
-                                # 抛出系统错误
-                                raise SystemError(
-                                    f'Game Error{posTemp} {self.mouse_motion_pos.pos}')
-                        elif mode == 1:
-                            posTemp.mouse_click(event)  # 处理临时单元格的点击事件
-                except IndexError:
-                    pass  # 捕获索引错误，跳过
 
     def mouse_motion(self, event: pygame.event.Event):
         """鼠标移动事件
@@ -268,8 +194,8 @@ class Game():
             # 如果大于或等于1秒，则将self.time增加1秒
             self.time += 1
 
-            # 同时将计时器self.Timer增加1
-            self.Timer += 1
+            # 同时将计时器self.draw_timer.Timer增加1
+            self.draw_timer.Timer += 1
 
         # 其他代码...
 
@@ -304,6 +230,9 @@ class Game():
 
         # 绘制重置按钮
         self.reset_button.reflash()
+
+        # 绘制计时器
+        self.draw_timer.draw_timer()
 
     def set_mine(self):
         """设置地雷

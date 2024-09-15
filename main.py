@@ -33,11 +33,9 @@ while running:
         elif event.type == pygame.MOUSEMOTION:
             # 处理鼠标移动事件
             game.mouse_motion(event)
-            game.reflash()
         elif event.type == pygame.MOUSEBUTTONDOWN:
             # 处理鼠标按键按下事件
             game.mouse_click(event)
-            game.reflash()
     
     # 如果游戏结束，重新初始化游戏对象
     if game.end:
@@ -50,6 +48,7 @@ while running:
         game.update()
     
     # 更新屏幕显示
+    game.reflash()
     pygame.display.update()
     # 控制帧率
     clock.tick(constant.FPS)

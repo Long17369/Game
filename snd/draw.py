@@ -5,7 +5,7 @@ import pygame
 import snd.color as color
 
 
-class Draw():
+class Draw_Cell():
 
     number: int = 0
 
@@ -101,3 +101,39 @@ class Draw():
         a.blit(mouth, (0,0))
         # 将带有重置按钮的Surface对象绘制到游戏界面上
         self.surface.blit(a, (0, 0))
+
+class Draw_Timer():
+    """绘制计时器"""
+    def __init__(self, screen: pygame.Surface,size: int = 25,):
+        self.font = pygame.font.Font(None, int(size*1.2))
+        self.screen = screen
+        self.size = size
+        self.Timer = 0
+
+    def draw_timer(self):
+        """
+        绘制计时器
+
+        该方法用于在游戏界面上绘制一个计时器区域，显示当前游戏时间。
+        它通过创建一个带有SRCALPHA标志的Surface对象来实现半透明效果，然后在这个
+        Surface对象上绘制一个白色的矩形，最后将这个Surface对象与游戏界面合并，达到
+        计时器显示的效果。
+        """
+        size = self.size
+        # 绘制数字
+        time = str(self.Timer) if self.Timer > 99 else '0' + str(self.Timer) if self.Timer > 9 else '00' + str(self.Timer)
+        number = self.font.render(time, True, color.Red)
+        # 创建一个带有SRCALPHA标志的Surface对象，用于支持透明度设置
+        timer = pygame.Surface((size*4, size*3), flags=pygame.SRCALPHA)
+        # 获取渲染后数字的矩形区域
+        timer_rect = timer.get_rect()
+        # 将数字矩形区域居中对齐到a矩形区域的中心
+        number_rect = number.get_rect()
+        number_rect.center = timer.get_rect().center
+        # 绘制数字
+        timer.blit(number, number_rect)
+        # pygame.draw.rect(timer, color.Black, (0, 0, size*2, size*2))
+        # 将数字矩形区域右上角对齐到Cell矩形区域的右上角
+        timer_rect.topright = self.screen.get_rect().topright
+        # 将渲染好的数字绘制到Cell矩形区域上
+        self.screen.blit(timer, timer_rect)

@@ -4,7 +4,7 @@
 from typing import List
 import pygame
 import snd.color as color
-from snd.draw import Draw
+from snd.draw import Draw_Cell
 
 
 class Cell_Type():
@@ -63,7 +63,7 @@ class Cell():
         self.Rect_y = y * size
         # 定义棋子在游戏界面中的矩形区域
         self.Rect = (x * size, y * size, size, size)
-        self.Draw = Draw(size, game_surface)
+        self.Draw = Draw_Cell(size, game_surface)
         # 保存游戏界面的Surface对象
         self.game_surface = game_surface
         # 初始化棋子的绘制参数，包括颜色和图形等
