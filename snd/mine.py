@@ -1,6 +1,7 @@
 """格子
 """
 
+from typing import List
 import pygame
 import snd.color as color
 from snd.draw import Draw
@@ -30,10 +31,10 @@ class Cell_Type():
 class Cell():
     """格子"""
 
-    number: int = 0
-    mouse: bool = False
-    type = Cell_Type.Safe_Unexplored
-    size: int = 0
+    number: int
+    mouse: bool
+    type: int
+    size: int
 
     def __init__(self, x: int, y: int, game_surface: pygame.Surface, size: int = 25):
         """
@@ -44,9 +45,15 @@ class Cell():
         game_surface: 棋子所在的pygame Surface对象
         size: 棋子的大小，默认为25
         """
+        # 周围的单元格
+        self.neighbors: List[Cell] = []
         # 特殊情况处理：如果x和y都为-1，则表示这个棋子代表雷区之外的区域
         if x == -1 and y == -1:
             self.mouse = True
+        # 初始化棋子的基本属性
+        self.number = 0
+        self.mouse = False
+        self.type = Cell_Type.Safe_Unexplored
         # 初始化棋子的坐标、大小和相关属性
         self.x = x
         self.y = y
@@ -94,12 +101,19 @@ class Cell():
             if event.button == 1 and self.type in Cell_Type.Unexplored_Set:
                 self.Draw.number = self.number
                 self.type += Cell_Type.Explored
+                if self.number == 0:
+                    for i in self.neighbors:
+                        if i.type in Cell_Type.Unexplored_Set:
+                            i.mouse_click(event)
             # 左键点击已标记为旗子的单元格，无动作
             elif event.button == 1 and self.type in Cell_Type.Flag_Set:
                 ...
-            # 点击已探索的单元格，无动作
+            # 点击已探索的单元格，判断是否有旗子和雷，并探查周围的单元格
             elif self.type in Cell_Type.Explored_Set:
-                ...
+                if len([i for i in self.neighbors if i.type in Cell_Type.Flag_Set]) == self.number:
+                    for i in self.neighbors:
+                        if i.type in Cell_Type.Unexplored_Set:
+                            i.mouse_click(event)
             # 右键点击标记为旗子的单元格，将其类型改为未探索
             elif event.button == 3 and self.type in Cell_Type.Flag_Set:
                 self.type -= Cell_Type.Flag

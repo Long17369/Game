@@ -29,7 +29,6 @@ class Game():
         """
         self.end = False  # 游戏结束标志
         self.run = False  # 游戏运行标志
-        self.Flag = {}  # 存储旗帜标记的字典
         self.level = level  # 设置游戏难度等级
         self.size = size  # 设置游戏大小
         self.screen_size = (self.level.x * size + size * 1.6,
@@ -48,6 +47,8 @@ class Game():
             (self.level.x * size, self.level.y * size))  # 创建雷区表面
         self.minefield = [[Cell(x, y, self.minefield_surface,size) for y in range(
             self.level.y)] for x in range(self.level.x)]  # 初始化雷区，创建所有单元格对象
+        # 为每一个单元格获取周围的单元格
+        [self.get_neighbour(i) for j in self.minefield for i in j]
         # 重置按钮
         self.reset_button = Cell(-10086,-10086, self.screen,size)
         self.reset_button.type = Cell_Type.Reset_Button
@@ -66,6 +67,21 @@ class Game():
         self.Timer: int = 0  # 初始化计时器
         self.run = True  # 设置游戏运行状态为True
         ...
+
+    def get_neighbour(self, pos: Cell):
+        """为给定单元格获取周围的单元格"""
+        for i in range(pos.pos[0]-1, pos.pos[0]+2):
+            if i < 0:  # 如果x坐标小于0，跳过
+                continue
+            for j in range(pos.pos[1]-1, pos.pos[1]+2):
+                if j < 0:  # 如果y坐标小于0，跳过
+                    continue
+                if (i, j) == pos.pos:  # 如果当前单元格坐标与给定单元格坐标相同，跳过
+                    continue
+                try:
+                    pos.neighbors.append(self.minefield[i][j])  # 获取周围的单元格对象
+                except IndexError:
+                    pass  # 捕获索引错误，跳过
 
     def mouse_click(self, event: pygame.event.Event):
         """鼠标点击事件"""
@@ -127,8 +143,6 @@ class Game():
             n.type = Cell_Type.Safe_Unexplored  # 将单元格类型设置为未探索的安全区域
             n.number = 0  # 将单元格的数字设置为0
 
-        self.Flag = {}  # 清空旗帜标记字典
-
         # 遍历整个地雷区域，对所有类型为地雷的单元格进行重置
         [reset(i) for j in self.minefield for i in j ]
 
@@ -153,29 +167,29 @@ class Game():
         if pos.mouse_click(event):
             return True
 
-        # 如果点击事件是左键点击
-        if event.button == 1:
-            # 如果被点击的单元格的数字为0
-            if pos.number == 0:
-                self.traversal(event, pos, 0)  # 遍历周围的单元格
-            else:
-                # 检查周围标记数量
-                flag_count = 0
-                for i in range(pos.pos[0]-1, pos.pos[0]+2):
-                    if i < 0:  # 如果x坐标小于0，跳过
-                        continue
-                    for j in range(pos.pos[1]-1, pos.pos[1]+2):
-                        if j < 0:  # 如果y坐标小于0，跳过
-                            continue
-                        try:
-                            if self.Flag[(i, j)]:
-                                flag_count += 1
-                        except KeyError:
-                            pass  # 捕获键错误，跳过
-                # 如果周围标记数量等于数字，则
-                if flag_count == pos.number:
-                    self.traversal(event, pos, 1)
-                ...
+        # # 如果点击事件是左键点击
+        # if event.button == 1:
+        #     # 如果被点击的单元格的数字为0
+        #     if pos.number == 0:
+        #         self.traversal(event, pos, 0)  # 遍历周围的单元格
+        #     else:
+        #         # 检查周围标记数量
+        #         flag_count = 0
+        #         for i in range(pos.pos[0]-1, pos.pos[0]+2):
+        #             if i < 0:  # 如果x坐标小于0，跳过
+        #                 continue
+        #             for j in range(pos.pos[1]-1, pos.pos[1]+2):
+        #                 if j < 0:  # 如果y坐标小于0，跳过
+        #                     continue
+        #                 try:
+        #                     if self.Flag[(i, j)]:
+        #                         flag_count += 1
+        #                 except KeyError:
+        #                     pass  # 捕获键错误，跳过
+        #         # 如果周围标记数量等于数字，则
+        #         if flag_count == pos.number:
+        #             self.traversal(event, pos, 1)
+        #         ...
         return False  # 如果未踩雷，返回False
 
     @log  # 日志装饰器，用于记录函数调用
@@ -296,6 +310,9 @@ class Game():
         """
         # 初始化地雷计数器
         mine_count = 0
+
+        # 存储旗帜标记的字典
+        self.Flag = {}
 
         # 循环直到地雷数量达到设定值
         while mine_count <= self.level.mine_count-1:
